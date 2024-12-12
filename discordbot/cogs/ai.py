@@ -5,7 +5,7 @@ import google.generativeai as genai
 from IPython.display import display
 from IPython.display import Markdown
 
-genai.configure(api_key="AIzaSyCb9z7BOQOIqxMj0zipyc3fUh8DBZGeo8g")
+genai.configure(api_key="api_key")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 class AI(commands.Cog):
