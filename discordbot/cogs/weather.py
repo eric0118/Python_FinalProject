@@ -1,5 +1,6 @@
 import discord
 import datetime
+from datetime import datetime, timezone, timedelta
 from discord.ext import commands
 from discord import app_commands
 import os
@@ -115,13 +116,24 @@ def fix_isoformat_string(date_string):
 
 def get_lastest_data(time_periods):
     """根據當前時間抓取最新的時間區段資料"""
-    current_time = datetime.datetime.now()
+    # 獲取當前 UTC+8 時間
+    current_time = datetime.now(timezone.utc) + timedelta(hours=8)
     for period in time_periods:
-        corrected_start_time = fix_isoformat_string(period['StartTime'])
-        start_time = datetime.datetime.strptime(corrected_start_time, "%Y-%m-%d %H:%M:%S")
-        if start_time < current_time:
+        # 修正 ISO 格式的 StartTime 並轉換為 datetime 對象
+        corrected_end_time = fix_isoformat_string(period['EndTime'])
+        end_time = datetime.fromisoformat(corrected_end_time)
+        
+        # 比較無誤的時間大小
+        if end_time < current_time:
             return period
-    return time_periods[-1]  # 回傳最近的時間區段
+
+    # 如果無符合條件的，回傳最後一個時間區段
+    return time_periods[-1]
+
+def format_datetime(iso_datetime):
+    """將 ISO 8601 格式轉換為 'YYYY-MM-DD HH:MM:SS'"""
+    dt = datetime.fromisoformat(iso_datetime)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 def get_weather_info(city):
     try:
@@ -134,11 +146,11 @@ def get_weather_info(city):
         latest_min_temp = get_lastest_data(location_data['MinComfortIndex']['Time'])
         latest_uvi = get_lastest_data(location_data['UVIndex']['Time'])
 
-        print(f"{location_data}\n\n{latest_temp}\n\n{latest_pop}\n\n{latest_max_temp}\n\n{latest_min_temp}\n\n{latest_uvi}")
+        print(f"{latest_temp}\n\n{latest_pop}\n\n{latest_max_temp}\n\n{latest_min_temp}\n\n{latest_uvi}")
 
         weather_info = (
             f"地點: {location_data['LocationName']}\n"
-            f"時間: {latest_temp['StartTime']} ~ {latest_temp['EndTime']}\n"
+            f"時間: {format_datetime(latest_temp['StartTime'])} ~ {format_datetime(latest_temp['EndTime'])}\n"
             f"🌡️ {location_data['Temperature']['ElementName']}: {latest_temp['Temperature']}°C\n"
             f"🌂 {location_data['ProbabilityOfPrecipitation']['ElementName']}: {latest_pop['ProbabilityOfPrecipitation']}%\n"
             f"🔥 {location_data['MaxComfortIndex']['ElementName']}: {latest_max_temp['MaxComfortIndex']}°C ({latest_max_temp['MaxComfortIndexDescription']})\n"
@@ -148,12 +160,8 @@ def get_weather_info(city):
 
         return weather_info
     except KeyError as e:
-        # error_details = f"KeyError: {e}\n" + traceback.format_exc()
-        #print(error_details)
         return f"無法獲取天氣資訊，請稍後再試。缺少的欄位: {e}"
     except Exception as e:
-        # error_details = f"Exception: {e}\n" + traceback.format_exc()
-        #print(error_details)
         return f"無法獲取天氣資訊，請稍後再試。錯誤訊息: {e}"
 
 class Weather(commands.Cog):
