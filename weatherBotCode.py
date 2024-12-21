@@ -29,8 +29,6 @@ AVAILABLE_COUNTIES = [
     "雲林縣", "嘉義縣", "嘉義市", "屏東縣"
 ]
 
-aquire_info = ["T","PoP","MaxT","MinT","UVI","WeatherDescription"]
-
 def getWeatherData(city):
     headers = {
         "Authorization" : WEATHER_API_KEY,
@@ -132,7 +130,7 @@ def get_lastest_data(time_periods):
     for period in time_periods:
         corrected_start_time = fix_isoformat_string(period['StartTime'])
         start_time = datetime.datetime.strptime(corrected_start_time, "%Y-%m-%d %H:%M:%S")
-        if start_time > current_time:
+        if start_time < current_time:
             return period
     return time_periods[-1]  # 回傳最近的時間區段
 
@@ -147,7 +145,7 @@ def get_weather_info(city):
         latest_min_temp = get_lastest_data(location_data['MinComfortIndex']['Time'])
         latest_uvi = get_lastest_data(location_data['UVIndex']['Time'])
 
-        print(f"{location_data}\n\n{latest_temp}\n\n{latest_pop}\n\n{latest_max_temp}\n\n{latest_min_temp}\n\n{latest_uvi}")
+        print(f"{latest_temp}\n\n{latest_pop}\n\n{latest_max_temp}\n\n{latest_min_temp}\n\n{latest_uvi}")
 
         weather_info = (
             f"地點: {location_data['LocationName']}\n"
